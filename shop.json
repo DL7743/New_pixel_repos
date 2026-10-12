@@ -1,0 +1,39 @@
+{
+    "next_user_id": 3,
+    "next_order_id": 4,
+    "users": [
+        {
+            "id": 1,
+            "name": "Алия",
+            "email": "aliya@example.com"
+        },
+        {
+            "id": 2,
+            "name": "Марк",
+            "email": "mark@example.com"
+        }
+    ],
+    "orders": [
+        {
+            "id": 1,
+            "user_id": 1,
+            "item": "Стикерпак Космос",
+            "price": 1200,
+            "status": "paid"
+        },
+        {
+            "id": 2,
+            "user_id": 1,
+            "item": "Постер Pixel City",
+            "price": 3500,
+            "status": "new"
+        },
+        {
+            "id": 3,
+            "user_id": 2,
+            "item": "Стикерпак Котики",
+            "price": 1500,
+            "status": "paid"
+        }
+    ]
+}
