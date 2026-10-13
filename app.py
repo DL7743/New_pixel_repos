@@ -165,7 +165,7 @@ def get_order_rows(data):
 def get_user_orders(data, user_id):
     result =[]
     for order in data["orders"]:
-        if order["user_id "] == user_id:
+        if order["user_id"] == user_id:
             result.append(order)
     return result
 
@@ -191,18 +191,77 @@ def pay_order(data, order_id):
 # 10 Отмена с сохранением истории
 # 1. Создайте cancel_order. Отменять можно только new.
 # 2. Установите cancelled, не удаляя запись. Верните результат True или False.
+
+# находим заказ и делаем проверку существует ли заказ, 
+# находим заказ со статусом new и меняем на cancelled
+def cancel_order(data, order_id):
+    order = find_order(data, order_id)
+    if order is None or order["status"] != "new":
+        return False
+    order["status"] = "cancelled"
+    return True
+
 # 11 Удаление без потери связи
 # 1. Создайте delete_user. Удаление разрешено только человеку без заказов.
 # 2. Учитывайте заказы любого статуса. Счётчик ID не уменьшайте.
+# находим покупателя и проводим проверку на его наличие, 
+# потом проходим по циклу заказов и проверяем есть ли заказы у покупателя,
+# если нет заказов, то затем удаляем его
+def delete_user(data, user_id):
+    user = find_user(data, user_id)
+    if not user:
+        return False
+    for order in data["orders"]:
+            if order["user_id"] == user_id:
+                return False
+    data["users"].remove(user)
+    return True               
+
 # 12 Поиск товара
 # 1. Создайте search_orders(data, text). Найдите заказы по части названия без учёта регистра.
 # 2. Верните новый список и не удаляйте элементы из базы. Пустой запрос возвращает все заказы.
+# проверяем есть ли текст, усли текста нет то возвращаем весь список заказов от 0 элемента до конца
+# череp срез [:]
+# переводим текст в нижний регистр, затем создаем новый список куда будем помещать заказы с текстом
+# проходим по циклу заказов. создаем переменную где переводим в нижни регистр текст в описание item 
+# если текст найден в описании item добавляем в список
+def search_orders(data, text):
+    if not text:
+        return data["orders"][:]
+    search_text = text.lower()
+    found_orders = []
+    for order in data["orders"]:
+        item_name = order["item"].lower()
+        if search_text in item_name:
+            found_orders.append(order)  
+    return found_orders
+
 # 13 Дорогие заказы сначала
 # 1. Создайте sort_orders. Верните заказы по убыванию price через sorted и lambda.
 # 2. Порядок исходного списка должен остаться прежним.
+def sort_orders(data):
+    result = sorted(data["orders"], key = lambda order: order["price"], reverse = True )
+    return result
 # 14 Сколько потратил каждый человек
 # 1. Создайте get_paid_totals. Верните словарь: ключ — user_id, значение — сумма оплаченных заказов.
 # 2. Статусы new и cancelled не учитывайте. Для одного пользователя сложите все его paid.
+# создаем новый словарь для оплаченных заказов, проходим по циклу заказов и проверяем
+# заказы со статусом paid и если user_id совпадает с заказом по этому покупателю и вытаскиввем стоимость
+# и делаем проверку есть ли id покупателя в этом словаре, затем складываем все оплаченные заказы 
+# конкретного покупателя
+def get_paid_totals(data):
+    totals = {}
+    for order in data["orders"]:
+        if order["status"] == "paid":
+            user_id = order["user_id"]
+            price = order["price"]
+            if user_id not in totals:
+                totals[user_id] = 0
+
+            totals[user_id] += price
+            
+    return totals
+
 
 # 15 Рабочий PixelShop
 # 1. Создайте export_report: запишите в report.txt имя каждого пользователя и его сумму paid, включая ноль.
