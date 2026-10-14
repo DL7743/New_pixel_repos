@@ -268,6 +268,18 @@ def get_paid_totals(data):
 # 2. Соберите меню: журнал заказов, новый пользователь, новый заказ, оплата, отмена, отчёт и выход.
 # 3. Сохраняйте после успешного изменения, защищайте ввод чисел. Добавьте README с инструкцией запуска.
 # 4. Загрузите app.py, shop.json и README в уже настроенный Git репозиторий командами status, add, commit, push.
+def export_report(data):
+# Получаем словарь, где ключ — user_id, а значение — сумма оплаченных заказов
+    totals = get_paid_totals(data)
+    
+# Открываем файл для записи
+    with open("report.txt", "w", encoding="utf-8") as file:
+        for user in data["users"]:
+            user_id = user["id"]
+# Если user_id нет в словаре totals, подставится 0
+            sum_paid = totals.get(user_id, 0)
+# Записываем строку в формате "Имя: Сумма"
+            file.write(f"{user['name']}: {sum_paid}\n")
 def main():
     try:
         data = load_db()
@@ -276,7 +288,20 @@ def main():
         return
     
     while True:
-        print("\n1 Заказы | 2 Пользователь | 3 Заказ | 4 Оплата")
+        print("\n" + "="*30)
+        print("         ГЛАВНОЕ МЕНЮ")
+        print("="*30)
+        print("1. Журнал заказов")
+        print("2. Новый пользователь")
+        print("3. Новый заказ")
+        print("4. Оплата заказа")
+        print("5. Отмена заказа")
+        print("6. Удаление пользователя")
+        print("7. Поиск по товарам")
+        print("8. Сортировка по цене")
+        print("9. Экспорт отчета")
+        print("0. Выход из программы")
+        print("="*30)
         choice = input("Действие: ")
 
         if choice == "1":
@@ -285,5 +310,83 @@ def main():
         elif choice == "2":
             name = input("Имя: ")
             email = input("Почта: ")
-            changed = add_user(data,name,email) is not None
-main()
+            user = add_user(data,name,email)2
+
+            if user:
+                print(f"Успешно добавлен! ID: {user['id']}")
+                save_db(data)
+            else:
+                print("Ошибка: пустые поля или такой Email уже существует.")
+        elif choice == "3":
+            print("\n--- Создание заказа ---")
+            try:
+                user_id = int(input("ID пользователя: "))
+                item = input("Название товара: ")
+                price = int(input("Цена: "))
+                order = add_order(data, user_id, item, price)
+                if order:
+                    print(f"Заказ создан! ID заказа: {order['id']}")
+                    save_db(data)
+                else:
+                    print("Ошибка: пользователь не найден, пустой товар или некорректная цена.")
+            except ValueError:
+                print("Ошибка ввода: ID и Цена должны быть числами.")
+        elif choice == "4":
+            print("\n--- Оплата заказа ---")
+            try:
+                order_id = int(input("ID заказа для оплаты: "))
+                if pay_order(data, order_id):
+                    print("Заказ успешно оплачен!")
+                    save_db(data)
+                else:
+                    print("Ошибка: заказ не найден или он уже не в статусе 'new'.")
+            except ValueError:
+                print("Ошибка ввода: ID заказа должен быть числом.")
+
+        elif choice == "5":
+            print("\n--- Отмена заказа ---")
+            try:
+                order_id = int(input("ID заказа для отмены: "))
+                if cancel_order(data, order_id):
+                    print("Заказ отменен.")
+                    save_db(data)
+                else:
+                    print("Ошибка: заказ не найден или его нельзя отменить.")
+            except ValueError:
+                print("Ошибка ввода: ID заказа должен быть числом.")
+
+        elif choice == "6":
+            print("\n--- Удаление пользователя ---")
+            try:
+                user_id = int(input("ID пользователя для удаления: "))
+                if delete_user(data, user_id):
+                    print("Пользователь успешно удален.")
+                    save_db(data)
+                else:
+                    print("Ошибка: пользователь не найден или у него есть заказы (удаление запрещено).")
+            except ValueError:
+                print("Ошибка ввода: ID должен быть числом.")
+        elif choice == "7":
+            print("\n--- Поиск заказов по названию ---")
+            text = input("Введите текст для поиска (пусто — показать все): ")
+            found = search_orders(data, text)
+            if not found:
+                print("Ничего не найдено.")
+            for order in found:
+                print(f"ID: {order['id']} | Товар: {order['item']} | Цена: {order['price']} | Статус: {order['status']}")
+        elif choice == "8":
+            print("\n--- Заказы от дорогих к дешевым ---")
+            sorted_list = sort_orders(data)
+            for order in sorted_list:
+                print(f"Цена: {order['price']} | ID: {order['id']} | Товар: {order['item']}")
+        elif choice == "9":
+            export_report(data)
+            print("Отчет успешно сохранен в файл report.txt!")
+        elif choice == "0":
+            print("Выход из программы. До свидания!")
+            break
+        else:
+            print("Неверный пункт меню, попробуйте еще раз.")
+
+if __name__ == "__main__":
+    main()
